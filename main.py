@@ -18,7 +18,9 @@ max_reflections = 3
 display = pg.display.set_mode((screen_size.x, screen_size.y))
 pg.display.set_caption("Python Raytracer")
 
-camera = Camera(Vector(0, 0, 0), screen_size)
+pixel_array = pg.PixelArray(display)
+
+camera = Camera(Vector(0, 0, 0), screen_size, 90)
 skybox = Skybox("skybox.png")
 
 objects = [
@@ -52,7 +54,7 @@ for y in range(pg.display.get_window_size()[1]):
 
         color, intersect, normal = trace_ray(ray)
         if intersect:
-            reflection_ray = Ray(intersect, ray.direction.reflect(normal))
+            reflection_ray = Ray(intersect + ray.direction.reflect(normal) * shadow_bias, ray.direction.reflect(normal))
             reflection_color = Vector(0, 0, 0)
             reflection_times = 0
             for reflection in range(max_reflections):
@@ -60,14 +62,14 @@ for y in range(pg.display.get_window_size()[1]):
                 reflection_color += new_color
                 reflection_times += 1
                 if intersect:
-                    reflection_ray = Ray(intersect, reflection_ray.direction.reflect(normal))
+                    Ray(intersect + reflection_ray.direction.reflect(normal) * shadow_bias, reflection_ray.direction.reflect(normal))
                 else:
                     break
             color += reflection_color / reflection_times
         else:
             color = skybox.get_image_coords(ray.direction)
 
-        display.set_at((x, y), color.to_rgb())
+        pixel_array[x, y] = color.to_rgb()
 
     pg.display.flip()
     for event in pg.event.get():
